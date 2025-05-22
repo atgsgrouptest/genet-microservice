@@ -1,0 +1,21 @@
+package models
+
+
+//Request given to ollama model images must be in base 64 encoding
+//Model string must contain available and valid model name
+type Request struct{
+    Model  string   `json:"model"`
+    Prompt string   `json:"prompt"`
+   // Images []string `json:"images"`
+	Stream bool	    `json:"stream"`
+}
+
+//This is reponse from the model
+//If done is true we are a success
+
+//This is the error reponse if prompt is not valid or Reponse has a problem
+type Error struct{
+	Status  int    `json:"status"`
+	Message string `json:"error"`
+	Description string `json:"description"`
+}
