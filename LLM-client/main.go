@@ -3,28 +3,37 @@ package main
 import (
 	"log"
 	"os"
-
-    
+	"github.com/gofiber/fiber/v2/middleware/logger"
+    "github.com/joho/godotenv"
 	"github.com/atgsgrouptest/genet-microservice/LLM-client/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 
-func main(){
-	app:=fiber.New()
+func main() {
+	// Load variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using default values")
+	}
 
-	app.Use(cors.New())
+	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
-      
-   routes.UseRoutes(app)
- 
-	if err:=app.Listen(os.Getenv(":APP_PORT"));err!=nil{
+    
+	 app.Use(logger.New()) 
+	routes.UseRoutes(app)
+
+	port := os.Getenv("APP_PORT")
+	/*if port == "" {
+		fmt.Println("APP_PORT not set, using default port 8001")
+		port = "8001"
+	}*/
+
+	if err := app.Listen(":" + port); err != nil {
 		log.Fatalf("Error starting server: %v", err)
-		return
 	}
 }

@@ -2,6 +2,8 @@ package factory
 
 import (
 	"bytes"
+	"fmt"
+
 	"github.com/json-iterator/go"
 
 	"io/ioutil"
@@ -9,6 +11,7 @@ import (
 
 	"github.com/lokesh2201013/genet-microservice/Adapter-service/models"
 )
+
 //Each model type implements the ModelAdapter interface
 //ModelAdapter is an interface that defines the method GenerateResponse
 // It takes a models.Request as input and returns a string response and models.Error
@@ -40,20 +43,21 @@ func (l *llama3Adapter) GenerateResponse(request models.Request) (string, models
 	if err != nil {
 		
 		return "", models.Error{
-			Status:      500,
-			Message:     "Internal Server Error",
+			ServiceName: "Adapter Service",
+			Message:     "Internal Server Error in Adapter Service",
 			Description: "Failed to marshal request body: " + err.Error(),
 		}
 	}
      
+	fmt.Println(request)
 	//Send a POST request to the model server that is currently running locally 
 	// The URL is hardcoded to http://localhost:11434/api/generate
 	// The content type is set to application/json
 	resp, err := http.Post("http://localhost:11434/api/generate", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return "models.Response{}", models.Error{
-			Status:      500,
-			Message:     "Internal Server Error",
+			ServiceName: "Adapter Service",
+			Message:     "Internal Server Error in Adapter Service",
 			Description: "Failed to send request to model server: " + err.Error(),
 		}
 	}
@@ -62,8 +66,8 @@ func (l *llama3Adapter) GenerateResponse(request models.Request) (string, models
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", models.Error{
-			Status:      500,
-			Message:     "Internal Server Error",
+			ServiceName: "Adapter Service",
+			Message:     "Internal Server Error in Adapter Service",
 			Description: "Failed to read response body: " + err.Error(),
 		}
 	}
@@ -71,11 +75,11 @@ func (l *llama3Adapter) GenerateResponse(request models.Request) (string, models
 	var response Response
 	if err :=  jsoniter.Unmarshal(body, &response); err != nil {
 		return "", models.Error{
-			Status:      500,
-			Message:     "Internal Server Error",
+			ServiceName: "Adapter Service",
+			Message:     "Internal Server Error in Adapter Service",
 			Description: "Failed to unmarshal response body: " + err.Error(),
 		}
 	}
-
+    fmt.Println("Raw adapter response:", string(body))
 	return response.Response, models.Error{}
 }

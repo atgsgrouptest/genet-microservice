@@ -15,7 +15,7 @@ type Request struct{
 
 //This is the error reponse if prompt is not valid or Reponse has a problem
 type Error struct{
-	Status  int    `json:"status"`
+	ServiceName string `json:"service_name"`
 	Message string `json:"error"`
 	Description string `json:"description"`
 }

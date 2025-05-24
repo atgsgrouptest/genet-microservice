@@ -8,5 +8,6 @@ import(
 
 
 func UseRoutes(app *fiber.App) {
+	//SendRequest to the controller
   app.Post("/sendRequest",controllers.SendRequest)
 }
