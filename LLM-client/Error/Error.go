@@ -1,7 +1,7 @@
 package Error
 
 import(
-	"github.com/lokesh2201013/genet-microservice/Adapter-service/models"
+	"github.com/atgsgrouptest/genet-microservice/LLM-client/models"
 )
 
 func ReturnError(ServiceName string,Err error,Message string)(models.Error){

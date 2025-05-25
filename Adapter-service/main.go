@@ -2,19 +2,21 @@ package main
 
 import (
 	//"fmt"
-	"log"
+	"go.uber.org/zap"
+	"github.com/lokesh2201013/genet-microservice/Adapter-service/Logger"
 	"os"
-    "github.com/gofiber/fiber/v2/middleware/logger"
+    
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 	"github.com/lokesh2201013/genet-microservice/Adapter-service/routes"
 )
 
+
 func main() {
 	// Load variables from .env file
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using default values")
+		logger.Log.Warn("No .env file found, using default values")
 	}
 
 	app := fiber.New()
@@ -23,9 +25,12 @@ func main() {
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
-   
-	 app.Use(logger.New()) 
-
+    
+	//app.Use(logger.New())
+	logger.InitLogger() // Initialize the logger
+	// Register routes
+	app.Use(logger.ZapLogger())
+ 
 	routes.UseRoutes(app)
 
 	port := os.Getenv("APP_PORT")
@@ -35,6 +40,6 @@ func main() {
 	}*/
 
 	if err := app.Listen(":" + port); err != nil {
-		log.Fatalf("Error starting server: %v", err)
+		logger.Log.Fatal("Error starting server", zap.Error(err))
 	}
 }
