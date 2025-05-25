@@ -3,32 +3,28 @@ package controllers
 import (
 	"encoding/base64"
 	"io"
-	//"mime"
-	"mime/multipart"	
+	"mime/multipart"
 )
 
-func ProcessImage(image *multipart.FileHeader)(string,error){
-	//open the file
-   file,err:=image.Open()
-   if err!=nil{
-	  return "",err
-   }
-   defer file.Close()
-  
-   //Read the file 
-   imageBytes,err:= io.ReadAll(file)
-   if err!=nil{
-	  return "",err
-   }
-   
-   //Convert to base64
-   base64Str:= base64.StdEncoding.EncodeToString(imageBytes)
-   
-   //Get the mime type example image/jpeg
-   mimeType:=image.Header.Get("Content-Type")
+// ProcessImage converts an image file header into a raw base64 string.
+// This raw base64 string is what Ollama expects for multimodal input.
+func ProcessImage(image *multipart.FileHeader) (string, error) {
+	// Open the file
+	file, err := image.Open()
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
 
-   //final string given example data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...
-   dataURI:="data:"+mimeType+";base64,"+base64Str
+	// Read the file into a byte slice
+	imageBytes, err := io.ReadAll(file)
+	if err != nil {
+		return "", err
+	}
 
-   return dataURI,nil
+	// Convert the byte slice to a base64 encoded string
+	base64Str := base64.StdEncoding.EncodeToString(imageBytes)
+
+	// Return just the raw base64 string
+	return base64Str, nil
 }

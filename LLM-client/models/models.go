@@ -7,7 +7,7 @@ package models
 type Response struct{
 	Model string `json:"model"`
 	Prompt string `json:"prompt"`
-	Images string `json:"images"`
+	Images []string `json:"images"`
 }
 
 
