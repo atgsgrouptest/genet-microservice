@@ -19,7 +19,9 @@ func main() {
 		logger.Log.Warn("No .env file found, using default values")
 	}
 
-	app := fiber.New()
+ app := fiber.New(fiber.Config{
+    BodyLimit: 20 * 1024 * 1024, // 20MB
+})
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",

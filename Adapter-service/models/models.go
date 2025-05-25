@@ -6,7 +6,7 @@ package models
 type Request struct{
     Model  string   `json:"model"`
     Prompt string   `json:"prompt"`
-   // Images string `json:"images"`
+   Images []string `json:"images"`
 	Stream bool	    `json:"stream"`
 }
 //This is the error reponse if prompt is not valid or Reponse has a problem

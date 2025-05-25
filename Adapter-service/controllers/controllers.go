@@ -38,7 +38,7 @@ func ModelRequest(c *fiber.Ctx) error {
     fmt.Println("Decrypted JSON:", decryptedJson)
     
      logger.Log.Info("Adapter Service Package controllers", zap.String("Decrypted JSON", decryptedJson))
-	// Check if the model and prompt are specified in the request
+	// Check if the model and prompt are specified in the request and model is multimodal
 	if request.Model == "" {
 		logger.Log.Error("Adapter Service Package controllers", zap.Error(fmt.Errorf("model not specified")), zap.String("Message", "Model not specified in request body"))
 		return c.Status(fiber.StatusBadRequest).JSON(Error.ReturnError("Adapter Service Package controllers",fmt.Errorf("model not specified"),"Model not specified in request body",
@@ -48,6 +48,11 @@ func ModelRequest(c *fiber.Ctx) error {
 	if request.Prompt == "" {
 		logger.Log.Error("Adapter Service Package controllers", zap.Error(fmt.Errorf("prompt not specified")), zap.String("Message", "Prompt not specified in request body"))
 		return c.Status(fiber.StatusBadRequest).JSON(Error.ReturnError("Adapter Service Package controllers",fmt.Errorf("prompt not specified"),"Prompt not specified in request body",))
+	}
+
+    if request.Model=="llama3:8b"&& request.Images!=nil{
+		logger.Log.Error("Adapter Service Package controllers", zap.Error(fmt.Errorf("Images not supported for llama3:8b model")), zap.String("Message", "Images not supported for llama3:8b model"))						
+       return c.Status(fiber.StatusBadRequest).JSON(Error.ReturnError("Adapter Service Package controllers",fmt.Errorf("Images not supported for llama3:8b model"),"Images not supported for llama3:8b model",))
 	}
     
 	// Set the stream to false as per the request

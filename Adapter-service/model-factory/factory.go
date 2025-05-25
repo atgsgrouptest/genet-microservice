@@ -21,6 +21,8 @@ func GetModelType(model string)(ModelAdapter,error){
 	switch model{
 	case "llama3:8b":
 		return &llama3Adapter{},nil
+	case "gemma3:4b":
+		return &gemma3Adapter{},nil
 	default:
 		return nil, errors.New("Invalid model type")
 	}
