@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/json-iterator/go"
 	"github.com/lokesh2201013/genet-microservice/Adapter-service/Error"
-	logger "github.com/lokesh2201013/genet-microservice/Adapter-service/Logger"
+	"github.com/lokesh2201013/genet-microservice/Adapter-service/Logger"
 	"github.com/lokesh2201013/genet-microservice/Adapter-service/model-factory"
 	"github.com/lokesh2201013/genet-microservice/Adapter-service/models"
 	"github.com/lokesh2201013/genet-microservice/Adapter-service/utils"
@@ -35,9 +35,9 @@ func ModelRequest(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.ReturnError("Adapter Service Package controllers",err,"Failed to unmarshal request body to models.Request",
 		))
 	}
-    fmt.Println("Decrypted JSON:", decryptedJson)
     
-     logger.Log.Info("Adapter Service Package controllers", zap.String("Decrypted JSON", decryptedJson))
+    
+     logger.Log.Debug("Adapter Service Package controllers", zap.String("Decrypted JSON", decryptedJson))
 	// Check if the model and prompt are specified in the request and model is multimodal
 	if request.Model == "" {
 		logger.Log.Error("Adapter Service Package controllers", zap.Error(fmt.Errorf("model not specified")), zap.String("Message", "Model not specified in request body"))
@@ -57,7 +57,8 @@ func ModelRequest(c *fiber.Ctx) error {
     
 	// Set the stream to false as per the request
 	request.Stream = false
-
+	
+    logger.Log.Debug("Adapter Service Package controllers", zap.String("Model", request.Model), zap.String("Prompt", request.Prompt), zap.Any("Images", request.Images))
 	// Get the appropriate model adapter based on the model specified in the request
 	adapter,err:= factory.GetModelType(request.Model)
 
@@ -75,6 +76,6 @@ func ModelRequest(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(errResponse)
 	}
 
-	logger.Log.Info("Adapter Service Package controllers", zap.String("Model", request.Model), zap.String("Prompt", request.Prompt), zap.String("Response", response))
+	logger.Log.Debug("Adapter Service Package controllers", zap.String("Model", request.Model), zap.String("Prompt", request.Prompt), zap.String("Response", response))
 	return c.Status(fiber.StatusOK).JSON(response)
 	}

@@ -19,7 +19,9 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		logger.Log.Warn("No .env file found, using default values")
 	}
-
+    
+	//Increase the body limit to 20MB
+	//Default is 4MB
     app := fiber.New(fiber.Config{
     BodyLimit: 20 * 1024 * 1024, // 20MB
 })

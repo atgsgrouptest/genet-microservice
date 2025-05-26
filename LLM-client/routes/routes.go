@@ -10,5 +10,7 @@ import(
 func UseRoutes(app *fiber.App) {
 	//SendRequest to the controller
   app.Post("/sendRequest",controllers.SendRequest)
+	//SendRequestWithImages to the controller it includes images
+	//Use multipart/form-data to send images with key "images"->file and key "prompt"->text
   app.Post("/sendRequestImages",controllers.SendRequestWithImages)
 }

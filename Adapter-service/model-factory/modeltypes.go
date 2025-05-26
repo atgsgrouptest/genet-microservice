@@ -3,14 +3,15 @@ package factory
 import (
 	"bytes"
 	"fmt"
+	"os"
 
 	"github.com/json-iterator/go"
 
 	"io"
 	"net/http"
 
+	"github.com/lokesh2201013/genet-microservice/Adapter-service/Error"
 	"github.com/lokesh2201013/genet-microservice/Adapter-service/models"
-		"github.com/lokesh2201013/genet-microservice/Adapter-service/Error"
 )
 
 //Each model type implements the ModelAdapter interface
@@ -49,9 +50,9 @@ func (l *llama3Adapter) GenerateResponse(request models.Request) (string, models
 	//Send a POST request to the model server that is currently running locally 
 	// The URL is hardcoded to http://localhost:11434/api/generate
 	// The content type is set to application/json
-	resp, err := http.Post("http://localhost:11434/api/generate", "application/json", bytes.NewBuffer(reqBody))
+	resp, err := http.Post("http://"+os.Getenv("LLM_VM_HOST")+":11434/api/generate", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
-		return "models.Response{}", Error.ReturnError("Adapter Service Package factory", err, "Failed to send request to model server")
+		return "", Error.ReturnError("Adapter Service Package factory", err, "Failed to send request to model server")
 	}
 	defer resp.Body.Close()
     
@@ -97,7 +98,7 @@ reqBody, err := jsoniter.Marshal(request)
 	//Send a POST request to the model server that is currently running locally 
 	// The URL is hardcoded to http://localhost:11434/api/generate
 	// The content type is set to application/json
-	resp, err := http.Post("http://localhost:11434/api/generate", "application/json", bytes.NewBuffer(reqBody))
+	resp, err := http.Post("http://"+os.Getenv("LLM_VM_HOST")+":11434/api/generate", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return "models.Response{}", Error.ReturnError("Adapter Service Package factory", err, "Failed to send request to model server")
 	}
