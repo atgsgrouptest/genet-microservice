@@ -19,7 +19,7 @@ type ModelAdapter interface {
 // If the model name is not valid, it returns an error
 func GetModelType(model string)(ModelAdapter,error){
 	switch model{
-	case "llama3:8b":
+	case "llama3.1:8b":
 		return &llama3Adapter{},nil
 	case "gemma3:4b":
 		return &gemma3Adapter{},nil

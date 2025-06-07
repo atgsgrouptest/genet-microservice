@@ -15,3 +15,12 @@ type Error struct{
 	Message string `json:"error"`
 	Description string `json:"description"`
 }
+
+  type Response struct {
+    Message struct {
+        Role    string `json:"role"`
+        Content string `json:"content"`
+    } `json:"message"`
+    Done       bool   `json:"done"`
+    DoneReason string `json:"done_reason"`
+}

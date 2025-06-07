@@ -37,12 +37,11 @@ func SendRequest(c *fiber.Ctx) error {
     var response models.Response
     
 	//Prompt to be given to the model
-    response.Prompt=request.Prompt+" give the entire response in json format"  
-    
-    //Hardcoded model name
+    response.Prompt=request.Prompt
+	//Hardcoded model name
 	//This is the model name that is used in the adapter service
 	//Stream is set to false
-	response.Model="llama3:8b" //This is the model name that is used in the adapter service
+	response.Model="llama3.1:8b" //This is the model name that is used in the adapter service
 	logger.Log.Debug("LLM Client Package Controllers",zap.String("Name of model = ",response.Model)) //This is the model name
 	 responsefromadapter,error:= ReturnResponse(response)
 	  if error!= (models.Error{}) {
@@ -131,7 +130,7 @@ if err != nil && err != http.ErrMissingFile {
 	 //Hardcoded model name
 	//This is the model name that is used in the adapter service
 	//Stream is set to false
-	response.Model="gemma3:4b" 
+	response.Model="llama3:8b" 
 
 	response.Prompt=response.Prompt+" give the entire response in json format" 
 
@@ -207,7 +206,7 @@ func ReturnResponse(response models.Response) (string , models.Error) {
     }
     
 	//Send a POST request to the adapter service
-	resp, err := http.Post(os.Getenv("ADAPTER_SERVICE_HOST"), "application/json", bytes.NewBuffer([]byte(encryptedBody)))
+	resp, err := http.Post(os.Getenv("ADAPTER_SERVICE_HOST")+"/modelRequest", "application/json", bytes.NewBuffer([]byte(encryptedBody)))
 	if err != nil {
 		logger.Log.Error("LLM Client Package Controllers", zap.Error(err), zap.String("Message", "Failed to send request to adapter service"))
 		return "",Error.ReturnError("LLM Client Package Controllers",err , "Failed to send request to adapter service")
