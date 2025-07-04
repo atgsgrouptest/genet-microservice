@@ -1,0 +1,12 @@
+./tmp
+./Adapter-service/.env
+./AI-testing/app/.env
+./AI-testing-Prompt-service/.env
+./LLM-client/.env
+./Processor-service/.env
+./RAG-service/.env
+*/.env
+Adapter-service/.env
+AI-testing/app/.env
+*.env
+*.tmp

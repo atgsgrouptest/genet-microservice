@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playwright Code Generator</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 150px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .start-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .stop-btn {
+            background: #e53e3e;
+            color: white;
+            display: none;
+        }
+
+        .stop-btn:hover {
+            background: #c53030;
+            transform: translateY(-2px);
+        }
+
+        .clear-btn {
+            background: #f7fafc;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+
+        .clear-btn:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .status {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .status.success {
+            background: #f0fff4;
+            color: #38a169;
+            border: 1px solid #9ae6b4;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #e53e3e;
+            border: 1px solid #feb2b2;
+        }
+
+        .status.info {
+            background: #ebf8ff;
+            color: #3182ce;
+            border: 1px solid #90cdf4;
+        }
+
+        .status.warning {
+            background: #fffbeb;
+            color: #d69e2e;
+            border: 1px solid #f6e05e;
+        }
+
+        .code-preview {
+            margin-top: 30px;
+            text-align: left;
+            background: #1a202c;
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+            animation: slideUp 0.5s ease;
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .code-preview pre {
+            color: #e2e8f0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn {
+            background: #4a5568;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #2d3748;
+        }
+
+        .activity-log {
+            margin-top: 30px;
+            text-align: left;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry.info {
+            background: #ebf8ff;
+            color: #3182ce;
+        }
+
+        .log-entry.success {
+            background: #f0fff4;
+            color: #38a169;
+        }
+
+        .log-entry.error {
+            background: #fed7d7;
+            color: #e53e3e;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .session-info {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        @media (max-width: 600px) {
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Playwright Codegen</h1>
+        <p class="subtitle">Generate Playwright code from your browser interactions</p>
+        
+        <div class="session-info">
+            <strong>Session ID:</strong> <span id="sessionId"></span>
+        </div>
+        
+        <div class="input-group">
+            <label for="url">Target URL</label>
+            <input type="url" id="url" placeholder="https://example.com" value="https://github.com">
+        </div>
+        
+        <div class="button-group">
+            <button class="start-btn" id="startBtn" onclick="startCodegen()">
+                <span class="icon">🚀</span>
+                Start Recording
+            </button>
+            <button class="stop-btn" id="stopBtn" onclick="stopCodegen()">
+                <span class="icon">⏹️</span>
+                Stop Recording
+            </button>
+            <button class="clear-btn" onclick="clearAll()">
+                <span class="icon">🗑️</span>
+                Clear
+            </button>
+        </div>
+
+        <div id="status" class="status"></div>
+        
+        <div id="activityLog" class="activity-log">
+            <h3 style="margin-bottom: 15px; color: #4a5568;">Activity Log</h3>
+            <div id="logEntries"></div>
+        </div>
+        
+        <div id="codePreview" class="code-preview">
+            <div class="code-header">
+                <span>Generated Playwright Code</span>
+                <button class="copy-btn" onclick="copyCode()">Copy Code</button>
+            </div>
+            <pre id="generatedCode"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Initialize socket connection
+        const socket = io();
+        
+        // Generate session ID
+        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        document.getElementById('sessionId').textContent = sessionId;
+        
+        let isRecording = false;
+        let codegenStartTime = null;
+
+        // Socket event listeners
+        socket.on('connect', () => {
+            addLogEntry('Connected to server', 'success');
+        });
+
+        socket.on('disconnect', () => {
+            addLogEntry('Disconnected from server', 'error');
+        });
+
+        socket.on('codegen-starting', (data) => {
+            addLogEntry(`Starting codegen for: ${data.url}`, 'info');
+        });
+
+        socket.on('codegen-output', (data) => {
+            if (data.sessionId === sessionId) {
+                addLogEntry(`Output: ${data.data.trim()}`, 'info');
+            }
+        });
+
+        socket.on('codegen-complete', (data) => {
+            if (data.sessionId === sessionId) {
+                addLogEntry('Code generation completed!', 'success');
+                displayGeneratedCode(data.code);
+                resetRecordingState();
+            }
+        });
+
+        socket.on('codegen-error', (data) => {
+            if (data.sessionId === sessionId) {
+                addLogEntry(`Error: ${data.error}`, 'error');
+                showStatus('Error occurred during code generation', 'error');
+                resetRecordingState();
+            }
+        });
+
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            if (type !== 'error') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function addLogEntry(message, type = 'info') {
+            const logEntries = document.getElementById('logEntries');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEntries.appendChild(entry);
+            logEntries.scrollTop = logEntries.scrollHeight;
+            
+            // Show log if hidden
+            document.getElementById('activityLog').style.display = 'block';
+        }
+
+        async function startCodegen() {
+            const urlInput = document.getElementById('url');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showStatus('Please enter a valid URL', 'error');
+                return;
+            }
+
+            if (!isValidUrl(url)) {
+                showStatus('Please enter a valid URL format', 'error');
+                return;
+            }
+
+            try {
+                // Update UI to recording state
+                setRecordingState(true);
+                codegenStartTime = Date.now();
+                
+                addLogEntry('Sending request to start codegen...', 'info');
+                
+                // Send request to server
+                const response = await fetch('/api/start-codegen', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        sessionId: sessionId
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Playwright browser opened! Perform your actions in the browser window.', 'success');
+                    addLogEntry('Codegen process started successfully', 'success');
+                    
+                    // Emit socket event
+                    socket.emit('start-codegen', { url, sessionId });
+                } else {
+                    throw new Error(result.error || 'Failed to start codegen');
+                }
+                
+            } catch (error) {
+                console.error('Error starting codegen:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+                addLogEntry(`Failed to start codegen: ${error.message}`, 'error');
+                resetRecordingState();
+            }
+        }
+
+        async function stopCodegen() {
+            try {
+                addLogEntry('Stopping codegen process...', 'info');
+                
+                const response = await fetch('/api/stop-codegen', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sessionId: sessionId
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Recording stopped', 'warning');
+                    addLogEntry('Codegen process stopped', 'info');
+                    
+                    // Try to get any generated code
+                    setTimeout(() => {
+                        fetchGeneratedCode();
+                    }, 1000);
+                } else {
+                    throw new Error(result.error || 'Failed to stop codegen');
+                }
+                
+            } catch (error) {
+                console.error('Error stopping codegen:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+                addLogEntry(`Failed to stop codegen: ${error.message}`, 'error');
+            } finally {
+                resetRecordingState();
+            }
+        }
+
+        async function fetchGeneratedCode() {
+            try {
+                const response = await fetch(`/api/get-code/${sessionId}`);
+                const result = await response.json();
+                
+                if (result.success && result.code) {
+                    displayGeneratedCode(result.code);
+                    addLogEntry('Generated code retrieved', 'success');
+                }
+            } catch (error) {
+                console.error('Error fetching generated code:', error);
+            }
+        }
+
+        function displayGeneratedCode(code) {
+            const codePreview = document.getElementById('codePreview');
+            const generatedCode = document.getElementById('generatedCode');
+            
+            generatedCode.textContent = code;
+            codePreview.style.display = 'block';
+        }
+
+        function copyCode() {
+            const code = document.getElementById('generatedCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                showStatus('Code copied to clipboard!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy code:', err);
+                showStatus('Failed to copy code', 'error');
+            });
+        }
+
+        function setRecordingState(recording) {
+            isRecording = recording;
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            if (recording) {
+                startBtn.innerHTML = '<span class="loading"></span>Recording...';
+                startBtn.disabled = true;
+                stopBtn.style.display = 'inline-block';
+            } else {
+                startBtn.innerHTML = '<span class="icon">🚀</span>Start Recording';
+                startBtn.disabled = false;
+                stopBtn.style.display = 'none';
+            }
+        }
+
+        function resetRecordingState() {
+            setRecordingState(false);
+            if (codegenStartTime) {
+                const duration = ((Date.now() - codegenStartTime) / 1000).toFixed(1);
+                addLogEntry(`Recording session duration: ${duration}s`, 'info');
+                codegenStartTime = null;
+            }
+        }
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('url').value = '';
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('codePreview').style.display = 'none';
+            document.getElementById('activityLog').style.display = 'none';
+            document.getElementById('logEntries').innerHTML = '';
+            
+            if (isRecording) {
+                stopCodegen();
+            }
+        }
+
+        // Handle Enter key
+        document.getElementById('url').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !isRecording) {
+                startCodegen();
+            }
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (isRecording) {
+                stopCodegen();
+            }
+        });
+    </script>
+</body>
+</html>
