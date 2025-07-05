@@ -12,3 +12,5 @@ langchain_ollama
 langchain_openai
 browser_use
 playwright.sync_api
+pymongo
+motor

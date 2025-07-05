@@ -117,10 +117,10 @@ func (g *gpt4oMiniAdapter) GenerateResponse(request models.Request) (string, mod
 
 	// Build the full chat request
 	chatRequest := ChatRequest{
-		Model:       "gpt-4o-mini",
+		Model:       "gpt-4.1-nano",
 		Messages:    []ChatMessage{{Role: "user", Content: content}},
-		MaxTokens:   512,
-		Temperature: 0.7,
+		MaxTokens:   1024,
+		Temperature: 0,
 	}
 
 	// Marshal the request
@@ -164,4 +164,77 @@ func (g *gpt4oMiniAdapter) GenerateResponse(request models.Request) (string, mod
 	}
 
 	return chatResponse.Choices[0].Message.Content, models.Error{}
+}
+
+type llama3Adapter struct{}
+func (l *llama3Adapter) GenerateResponse(request models.Request) (string, models.Error) {
+	if request.Prompt == "" {
+		return "", models.Error{
+			ServiceName: "llama3Adapter",
+			Message:     "Invalid prompt",
+			Description: "Prompt cannot be empty",
+		}
+	}
+
+	// Chat format payload
+	payload := map[string]interface{}{
+		"model": request.Model,
+		"messages": []map[string]string{
+			{
+				"role":    "user",
+				"content": request.Prompt,
+			},
+		},
+		"stream": request.Stream,
+	}
+	if request.Images != "" {
+		payload["images"] = []string{request.Images}
+	}
+
+	bodyBytes, err := jsoniter.Marshal(payload)
+	if err != nil {
+		return "", models.Error{
+			ServiceName: "llama3Adapter",
+			Message:     "JSON encoding error",
+			Description: err.Error(),
+		}
+	}
+
+	resp, err := http.Post("http://localhost:11434/api/chat", "application/json", bytes.NewReader(bodyBytes))
+	if err != nil {
+		return "", models.Error{
+			ServiceName: "llama3Adapter",
+			Message:     "Chat API request failed",
+			Description: err.Error(),
+		}
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", models.Error{
+			ServiceName: "llama3Adapter",
+			Message:     "Failed to read response",
+			Description: err.Error(),
+		}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", models.Error{
+			ServiceName: "llama3Adapter",
+			Message:     "Non-200 response from Ollama chat API",
+			Description: string(respBody),
+		}
+	}
+
+	var apiResp models.Response
+	if err := jsoniter.Unmarshal(respBody, &apiResp); err != nil {
+		return "", models.Error{
+			ServiceName: "llama3Adapter",
+			Message:     "JSON decode error",
+			Description: err.Error(),
+		}
+	}
+
+	return apiResp.Message.Content, models.Error{}
 }

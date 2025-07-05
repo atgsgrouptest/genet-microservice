@@ -25,6 +25,8 @@ func GetModelType(model string)(ModelAdapter,error){
 		return &gemma3Adapter{},nil
 	case "gpt-4o-mini":
 		return &gpt4oMiniAdapter{},nil
+	case "llama3.1:8b":
+		return &llama3Adapter{},nil
 	default:
 		return nil, errors.New("Invalid model type")
 	}

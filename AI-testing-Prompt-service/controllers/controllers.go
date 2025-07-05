@@ -2,26 +2,28 @@ package controllers
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
-	"encoding/json"
-	//"strings"
-    "context"
-   // "log"
-   // "time"
 
-    "go.mongodb.org/mongo-driver/bson/primitive"
-    //"go.mongodb.org/mongo-driver/mongo"
-    //"go.mongodb.org/mongo-driver/mongo/options"
+//"strings"
+	"context"
+ //"log"
+	//"time"
+	"strconv"	
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	//"go.mongodb.org/mongo-driver/mongo"
+	//"go.mongodb.org/mongo-driver/mongo/options"
 	"github.com/atgsgrouptest/genet-microservice/AI-testing/database"
+	"github.com/atgsgrouptest/genet-microservice/AI-testing/rabbitmq"
 
 	"github.com/atgsgrouptest/genet-microservice/AI-testing/Logger"
+	"github.com/atgsgrouptest/genet-microservice/AI-testing/models"
 	"github.com/atgsgrouptest/genet-microservice/AI-testing/utils"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
-	"github.com/atgsgrouptest/genet-microservice/AI-testing/models"
 )
 
 func MakePrompt(c *fiber.Ctx) error {
@@ -145,9 +147,8 @@ err = json.Unmarshal(responseBody, &outer);if err != nil {
 
 		negativeCaseData.Prompt = fmt.Sprintf(
     "I will give you a flow for chatbot. You have to return []string with negative case. "+
+	"The response should be in a JSON format with a single key \"negative_cases\" and the value should be an array of strings only.. "+
     "It should include tests for SQL injection and other security vulnerabilities in the flow. "+
-	"The response flow should match the input flow with  ->"+
-    "The response should be in a JSON format with a single key \"negative_cases\" and the value should be an array of strings. "+
     "No additional text or explanation is needed. Do not wrap it in triple backticks or code blocks.\n\n%s", flow)
 
 
@@ -171,8 +172,9 @@ err = json.Unmarshal(responseBody, &outer);if err != nil {
 				"details":      err.Error(),
 			})
 		}
-		defer resp.Body.Close()
+	
 		negativeCaseResponse, err := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
 		if err != nil {
 			logger.Log.Error("AI Testing Package Controllers", zap.String("Message", "Failed to read negative case response"), zap.Error(err))
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -196,14 +198,31 @@ err = json.Unmarshal(responseBody, &outer);if err != nil {
 
 		 negativeCaseResult,err := utils.ParseEscapedJSON[models.NegativeCaseResult](outer.Response)
 
-		if err != nil {
+		/*if err != nil {
 			logger.Log.Error("AI Testing Package Controllers", zap.String("Message", "Failed to parse negative case result"), zap.Error(err))
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"Service Name": "AI Testing Package Controllers",
 				"error":        "Unable to parse negative case result",
 				"details":      err.Error(),
 			})
-		}
+		}*/
+		if err != nil {
+	fmt.Println("Error parsing negative case result:", err)
+
+	// Fallback: just unquote the raw string to get the actual message
+	unquoted, unquoteErr := strconv.Unquote(outer.Response)
+	if unquoteErr != nil {
+		// Even unquoting failed, fallback to raw string
+		unquoted = outer.Response
+	}
+
+	// Use unquoted as fallback string representation
+	fmt.Println("Fallback as plain string:", unquoted)
+
+	// Optionally: store it somewhere or append to allNegativeCases as a single entry
+	allNegativeCases = append(allNegativeCases, []string{unquoted})
+	continue // or proceed with next flow
+}
 
 		fmt.Println("Negative Case Result:", negativeCaseResult)
         allNegativeCases = append(allNegativeCases, negativeCaseResult.NegativeCases)
@@ -213,11 +232,12 @@ err = json.Unmarshal(responseBody, &outer);if err != nil {
 	
 	request := models.Request{
         RequestID:       primitive.NewObjectID(),
-        CompanyID:       c.FormValue("company_id"), // Replace with actual User ID
+        CompanyID:       c.FormValue("company_id"), 
         RequestMaterial: openimagebytes,
         PositiveCases:   DFSresult,
         NegativeCases:  allNegativeCases,
     }
+
 collection := database.MongoDB.Collection("requests")
 	ctx := context.TODO()
 	_, err = collection.InsertOne(ctx, request)
@@ -226,6 +246,9 @@ collection := database.MongoDB.Collection("requests")
 			"error": "Failed to insert request",
 		})
 	}
+    rabbitmq.PublishRequestID(request.RequestID.Hex(),request.CompanyID)
+    fmt.Println("Request ID:", request.RequestID.Hex())
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"negative_cases": allNegativeCases,
 	})

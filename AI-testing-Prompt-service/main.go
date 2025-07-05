@@ -1,16 +1,20 @@
 package main
 
 import (
-    "github.com/atgsgrouptest/genet-microservice/AI-testing/Logger"
-	"github.com/atgsgrouptest/genet-microservice/AI-testing/routes"
+   
 	"os"
 	"go.uber.org/zap"
      "fmt"
 	"context"
-	"github.com/joho/godotenv"
-     "github.com/atgsgrouptest/genet-microservice/AI-testing/database"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
+
+	"github.com/atgsgrouptest/genet-microservice/AI-testing/rabbitmq"
+     "github.com/atgsgrouptest/genet-microservice/AI-testing/database"
+	 "github.com/atgsgrouptest/genet-microservice/AI-testing/Logger"
+	"github.com/atgsgrouptest/genet-microservice/AI-testing/routes"
 )
 
 
@@ -37,6 +41,7 @@ func main() {
 	// Register routes
 	app.Use(logger.ZapLogger())
     database.ConnectMongo()
+	rabbitmq.InitRabbitMQ()
 	routes.UseRoutes(app)
 
 
@@ -55,6 +60,7 @@ func main() {
     } else {
         logger.Log.Info("MongoDB disconnected successfully")
     }
+	rabbitmq.Close()
 }()
 
 }

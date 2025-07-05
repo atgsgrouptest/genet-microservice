@@ -18,6 +18,7 @@ require (
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/playwright-community/playwright-go v0.5200.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/streadway/amqp v1.1.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect

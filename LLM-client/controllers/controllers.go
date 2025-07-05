@@ -41,7 +41,7 @@ func SendRequest(c *fiber.Ctx) error {
 	//Hardcoded model name
 	//This is the model name that is used in the adapter service
 	//Stream is set to false
-	response.Model="gpt-4o-mini" //This is the model name that is used in the adapter service
+	response.Model="llama3.1:8b" //This is the model name that is used in the adapter service
 	logger.Log.Debug("LLM Client Package Controllers",zap.String("Name of model = ",response.Model)) //This is the model name
 	 responsefromadapter,error:= ReturnResponse(response)
 	  if error!= (models.Error{}) {
