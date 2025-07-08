@@ -1,9 +1,10 @@
-from fastapi import APIRouter
-from app.models import WebTestRequest
-from app.controllers import run_web_test
+from fastapi import APIRouter, Request
+from app.controllers.datacontroller import test
+from app.models.schema import RequestFromGo
 
-router=APIRouter()
+router = APIRouter()
 
-@router.post("/runWebTest")
-async def handle_web_test_request(req : WebTestRequest):
-    return await run_web_test(req)
+@router.post("/test")
+async def test_handler(request_model: RequestFromGo, request: Request):
+    db = request.app.state.db  # ✅ access db via request
+    return await test(request_model, db)
