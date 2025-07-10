@@ -9,8 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CHROME_PATH = r"/usr/bin/chromium"
-
+CHROME_PATH = r"/usr/bin/chromium-browser"
 def start_chrome_debugging(port=9222):
     chrome_command = [
         CHROME_PATH,
@@ -20,11 +19,17 @@ def start_chrome_debugging(port=9222):
         "--disable-popup-blocking",
         "--disable-extensions",
         "--disable-gpu",
-        "--no-sandbox",
-        "--headless=true",
+        "--no-sandbox",  # explicitly false, but okay
         "--user-data-dir=/tmp/chrome-profile",
     ]
-    return subprocess.Popen(chrome_command)
+
+    # inherit environment and ensure DISPLAY is set
+    env = os.environ.copy()
+    if "DISPLAY" not in env:
+        env["DISPLAY"] = ":0"  # typical for default GUI session
+
+    return subprocess.Popen(chrome_command, env=env)
+
 
 async def get_cdp_websocket_url(host="localhost", port=9222):
     async with httpx.AsyncClient() as client:
@@ -56,7 +61,7 @@ async def test(request_model: RequestFromGo, db):
             ),
             llm=ChatOpenAI(
                 model="gpt-4o-mini",
-                api_key=os.getenv("OPENAI_API_KEY"),
+                api_key=REMOVED_SECRET,
             ),
             use_vision=True,
             browser_session=browser_session,

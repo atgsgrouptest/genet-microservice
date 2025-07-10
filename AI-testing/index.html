@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Inquiry Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chatbot-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.4;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .bot-message {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+            border: 1px solid #90caf9;
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .option-button {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .option-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        .input-container {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #4CAF50;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-button:hover {
+            transform: scale(1.1);
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #ffcdd2, #f8bbd9);
+            color: #d32f2f;
+            border: 1px solid #f44336;
+        }
+
+        .warning-message {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+
+        .loading {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .restart-button {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .restart-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(255, 152, 0, 0.4);
+        }
+
+        .rate-limit-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .chatbot-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <div class="chat-header">
+            🤖 Sales Assistant
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be added here -->
+        </div>
+        <div class="input-container">
+            <div class="input-group">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." maxlength="500">
+                <button class="send-button" id="sendButton">➤</button>
+            </div>
+            <div class="rate-limit-info">
+                Messages: <span id="messageCount">0</span>/50 per session
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SalesChatbot {
+            constructor() {
+                this.currentState = 'start';
+                this.userData = {};
+                this.messageCount = 0;
+                this.maxMessages = 50;
+                this.rateLimitWindow = {};
+                this.securityFlags = 0;
+                this.maxSecurityFlags = 3;
+                
+                this.chatMessages = document.getElementById('chatMessages');
+                this.chatInput = document.getElementById('chatInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.messageCountDisplay = document.getElementById('messageCount');
+                
+                this.initializeEventListeners();
+                this.startConversation();
+            }
+
+            initializeEventListeners() {
+                this.sendButton.addEventListener('click', () => this.handleUserInput());
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.handleUserInput();
+                });
+                
+                // Prevent common XSS attempts
+                this.chatInput.addEventListener('input', (e) => {
+                    this.validateInput(e.target.value);
+                });
+            }
+
+            validateInput(input) {
+                // Security checks
+                const suspiciousPatterns = [
+                    /<script/i,
+                    /javascript:/i,
+                    /on\w+=/i,
+                    /SELECT.*FROM/i,
+                    /UNION.*SELECT/i,
+                    /INSERT.*INTO/i,
+                    /DELETE.*FROM/i,
+                    /UPDATE.*SET/i,
+                    /DROP.*TABLE/i,
+                    /ALTER.*TABLE/i,
+                    /eval\(/i,
+                    /document\.cookie/i,
+                    /window\.location/i
+                ];
+
+                const hasSuspiciousContent = suspiciousPatterns.some(pattern => 
+                    pattern.test(input)
+                );
+
+                if (hasSuspiciousContent) {
+                    this.securityFlags++;
+                    this.addMessage('bot', 'Security warning: Suspicious content detected. Please use normal text only.', 'warning-message');
+                    
+                    if (this.securityFlags >= this.maxSecurityFlags) {
+                        this.addMessage('bot', 'Multiple security violations detected. Session terminated for safety.', 'error-message');
+                        this.disableChat();
+                        return false;
+                    }
+                    
+                    this.chatInput.value = '';
+                    return false;
+                }
+
+                // Length validation
+                if (input.length > 500) {
+                    this.addMessage('bot', 'Message too long. Please keep messages under 500 characters.', 'warning-message');
+                    return false;
+                }
+
+                return true;
+            }
+
+            sanitizeInput(input) {
+                return input
+                    .replace(/[<>]/g, '')
+                    .replace(/['"]/g, '')
+                    .replace(/javascript:/gi, '')
+                    .replace(/on\w+=/gi, '')
+                    .trim();
+            }
+
+            checkRateLimit() {
+                const now = Date.now();
+                const windowStart = now - 60000; // 1 minute window
+                
+                // Clean old entries
+                Object.keys(this.rateLimitWindow).forEach(timestamp => {
+                    if (parseInt(timestamp) < windowStart) {
+                        delete this.rateLimitWindow[timestamp];
+                    }
+                });
+                
+                // Check current rate
+                const recentMessages = Object.keys(this.rateLimitWindow).length;
+                if (recentMessages >= 20) {
+                    this.addMessage('bot', 'Rate limit exceeded. Please wait before sending more messages.', 'warning-message');
+                    return false;
+                }
+                
+                this.rateLimitWindow[now] = true;
+                return true;
+            }
+
+            handleUserInput() {
+                const input = this.chatInput.value.trim();
+                
+                if (!input) return;
+                
+                // Check message limit
+                if (this.messageCount >= this.maxMessages) {
+                    this.addMessage('bot', 'Session message limit reached. Please restart the conversation.', 'error-message');
+                    this.addRestartButton();
+                    return;
+                }
+
+                // Check rate limit
+                if (!this.checkRateLimit()) return;
+
+                // Validate input
+                if (!this.validateInput(input)) return;
+
+                const sanitizedInput = this.sanitizeInput(input);
+                
+                this.addMessage('user', sanitizedInput);
+                this.chatInput.value = '';
+                this.messageCount++;
+                this.updateMessageCount();
+                
+                this.showTypingIndicator();
+                
+                setTimeout(() => {
+                    this.hideTypingIndicator();
+                    this.processInput(sanitizedInput);
+                }, 1000 + Math.random() * 1000);
+            }
+
+            addMessage(sender, message, className = '') {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message ${className}`;
+                messageDiv.textContent = message;
+                
+                this.chatMessages.appendChild(messageDiv);
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            addOptionsMessage(message, options) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message bot-message';
+                messageDiv.innerHTML = `
+                    <div>${message}</div>
+                    <div class="options">
+                        ${options.map(option => 
+                            `<button class="option-button" onclick="chatbot.selectOption('${option.value}')">${option.text}</button>`
+                        ).join('')}
+                    </div>
+                `;
+                
+                this.chatMessages.appendChild(messageDiv);
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            addRestartButton() {
+                const buttonDiv = document.createElement('div');
+                buttonDiv.className = 'message bot-message';
+                buttonDiv.innerHTML = `
+                    <div>Would you like to start a new conversation?</div>
+                    <button class="restart-button" onclick="chatbot.restart()">Restart Chat</button>
+                `;
+                
+                this.chatMessages.appendChild(buttonDiv);
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message bot-message';
+                typingDiv.id = 'typing-indicator';
+                typingDiv.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                    </div>
+                `;
+                
+                this.chatMessages.appendChild(typingDiv);
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            hideTypingIndicator() {
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+
+            updateMessageCount() {
+                this.messageCountDisplay.textContent = this.messageCount;
+            }
+
+            selectOption(value) {
+                this.addMessage('user', value);
+                this.messageCount++;
+                this.updateMessageCount();
+                
+                this.showTypingIndicator();
+                setTimeout(() => {
+                    this.hideTypingIndicator();
+                    this.processInput(value);
+                }, 800);
+            }
+
+            startConversation() {
+                this.addMessage('bot', 'Hello! Welcome to our sales assistant. I\'m here to help you with your inquiry.');
+                this.addOptionsMessage('What would you like to know about?', [
+                    { text: 'Get Sales Information', value: 'sales' },
+                    { text: 'Get Account Details', value: 'account' },
+                    { text: 'Get Pricing Information', value: 'pricing' },
+                    { text: 'Contact Support', value: 'support' }
+                ]);
+            }
+
+            processInput(input) {
+                const lowerInput = input.toLowerCase();
+
+                switch (this.currentState) {
+                    case 'start':
+                        this.handleStartState(lowerInput);
+                        break;
+                    case 'sales':
+                        this.handleSalesState(lowerInput);
+                        break;
+                    case 'account':
+                        this.handleAccountState(lowerInput);
+                        break;
+                    case 'pricing':
+                        this.handlePricingState(lowerInput);
+                        break;
+                    case 'support':
+                        this.handleSupportState(lowerInput);
+                        break;
+                    case 'data_collection':
+                        this.handleDataCollection(input);
+                        break;
+                    default:
+                        this.handleDefault(input);
+                }
+            }
+
+            handleStartState(input) {
+                if (input.includes('sales')) {
+                    this.currentState = 'sales';
+                    this.addMessage('bot', 'Great! I can help you with sales information.');
+                    this.addOptionsMessage('What specific sales information do you need?', [
+                        { text: 'Product Features', value: 'features' },
+                        { text: 'Demo Request', value: 'demo' },
+                        { text: 'Sales Contact', value: 'contact' }
+                    ]);
+                } else if (input.includes('account')) {
+                    this.currentState = 'account';
+                    this.addMessage('bot', 'I can help you with account details. For security, I\'ll need to verify some information.');
+                    this.addMessage('bot', 'Please provide your account email address:');
+                    this.currentState = 'data_collection';
+                    this.userData.step = 'email';
+                } else if (input.includes('pricing')) {
+                    this.currentState = 'pricing';
+                    this.addMessage('bot', 'I\'d be happy to help with pricing information!');
+                    this.addOptionsMessage('Which pricing tier are you interested in?', [
+                        { text: 'Premium Pricing', value: 'premium' },
+                        { text: 'Standard Pricing', value: 'standard' },
+                        { text: 'Enterprise Pricing', value: 'enterprise' },
+                        { text: 'Indian Support Pricing', value: 'indian_support' }
+                    ]);
+                } else if (input.includes('support')) {
+                    this.currentState = 'support';
+                    this.addMessage('bot', 'I can connect you with our support team.');
+                    this.addOptionsMessage('What type of support do you need?', [
+                        { text: 'Technical Support', value: 'technical' },
+                        { text: 'Billing Support', value: 'billing' },
+                        { text: 'General Inquiry', value: 'general' }
+                    ]);
+                } else {
+                    this.handleUnknownInput(input);
+                }
+            }
+
+            handleSalesState(input) {
+                if (input.includes('features')) {
+                    this.addMessage('bot', 'Our product features include:\n• Advanced Analytics\n• Real-time Reporting\n• Multi-platform Integration\n• 24/7 Support');
+                } else if (input.includes('demo')) {
+                    this.addMessage('bot', 'I\'d be happy to arrange a demo for you!');
+                    this.addMessage('bot', 'Please provide your email address to schedule a demo:');
+                    this.currentState = 'data_collection';
+                    this.userData.step = 'demo_email';
+                } else if (input.includes('contact')) {
+                    this.addMessage('bot', 'Our sales team can be reached at:\n• Email: sales@company.com\n• Phone: +1-800-123-4567\n• Available: Mon-Fri 9AM-6PM EST');
+                } else {
+                    this.handleUnknownInput(input);
+                }
+                this.addContinueOptions();
+            }
+
+            handleAccountState(input) {
+                this.addMessage('bot', 'For account security, please contact our support team directly at support@company.com with your account verification details.');
+                this.addContinueOptions();
+            }
+
+            handlePricingState(input) {
+                let pricingInfo = '';
+                
+                if (input.includes('premium')) {
+                    pricingInfo = 'Premium Plan: $99/month\n• All standard features\n• Priority support\n• Advanced analytics\n• Custom integrations';
+                } else if (input.includes('standard')) {
+                    pricingInfo = 'Standard Plan: $49/month\n• Core features\n• Email support\n• Basic analytics\n• Standard integrations';
+                } else if (input.includes('enterprise')) {
+                    pricingInfo = 'Enterprise Plan: Custom pricing\n• All premium features\n• Dedicated account manager\n• Custom development\n• SLA guarantee';
+                } else if (input.includes('indian_support')) {
+                    pricingInfo = 'Indian Support Plan: ₹3,999/month\n• Local support team\n• Regional compliance\n• Hindi language support\n• Indian payment methods';
+                } else {
+                    this.handleUnknownInput(input);
+                    return;
+                }
+                
+                this.addMessage('bot', pricingInfo);
+                this.addMessage('bot', 'Would you like to proceed with this plan or get more information?');
+                this.addContinueOptions();
+            }
+
+            handleSupportState(input) {
+                let supportInfo = '';
+                
+                if (input.includes('technical')) {
+                    supportInfo = 'Technical Support:\n• Email: tech@company.com\n• Phone: +1-800-TECH-123\n• Available 24/7\n• Response time: 2-4 hours';
+                } else if (input.includes('billing')) {
+                    supportInfo = 'Billing Support:\n• Email: billing@company.com\n• Phone: +1-800-BILL-456\n• Available: Mon-Fri 9AM-8PM EST\n• Response time: 1-2 business days';
+                } else if (input.includes('general')) {
+                    supportInfo = 'General Support:\n• Email: support@company.com\n• Phone: +1-800-HELP-789\n• Available: Mon-Fri 9AM-6PM EST\n• Response time: 24 hours';
+                } else {
+                    this.handleUnknownInput(input);
+                    return;
+                }
+                
+                this.addMessage('bot', supportInfo);
+                this.addContinueOptions();
+            }
+
+            handleDataCollection(input) {
+                if (this.userData.step === 'email' || this.userData.step === 'demo_email') {
+                    if (this.validateEmail(input)) {
+                        this.userData.email = input;
+                        if (this.userData.step === 'demo_email') {
+                            this.addMessage('bot', `Thank you! I've recorded your email: ${input}`);
+                            this.addMessage('bot', 'Our sales team will contact you within 24 hours to schedule your demo.');
+                        } else {
+                            this.addMessage('bot', `Email recorded: ${input}`);
+                            this.addMessage('bot', 'For security verification, please contact our support team directly.');
+                        }
+                        this.addContinueOptions();
+                    } else {
+                        this.addMessage('bot', 'Please provide a valid email address (e.g., user@example.com):', 'warning-message');
+                    }
+                }
+            }
+
+            validateEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email) && email.length <= 100;
+            }
+
+            handleUnknownInput(input) {
+                const responses = [
+                    "I'm not sure I understand. Could you please choose from the available options?",
+                    "I didn't quite catch that. Please select one of the options provided.",
+                    "Sorry, I don't recognize that request. Please try selecting from the menu options.",
+                    "I'm here to help with sales inquiries. Please choose from the available options."
+                ];
+                
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                this.addMessage('bot', randomResponse, 'warning-message');
+                
+                this.addOptionsMessage('How can I help you today?', [
+                    { text: 'Get Sales Information', value: 'sales' },
+                    { text: 'Get Account Details', value: 'account' },
+                    { text: 'Get Pricing Information', value: 'pricing' },
+                    { text: 'Contact Support', value: 'support' }
+                ]);
+            }
+
+            addContinueOptions() {
+                this.addOptionsMessage('What would you like to do next?', [
+                    { text: 'Ask Another Question', value: 'restart' },
+                    { text: 'End Conversation', value: 'end' }
+                ]);
+            }
+
+            handleDefault(input) {
+                if (input.toLowerCase().includes('restart')) {
+                    this.restart();
+                } else if (input.toLowerCase().includes('end')) {
+                    this.endConversation();
+                } else {
+                    this.handleUnknownInput(input);
+                }
+            }
+
+            endConversation() {
+                this.addMessage('bot', 'Thank you for using our sales assistant! Have a great day! 😊');
+                this.addMessage('bot', 'If you need further assistance, feel free to restart the conversation.');
+                this.addRestartButton();
+                this.disableChat();
+            }
+
+            disableChat() {
+                this.chatInput.disabled = true;
+                this.sendButton.disabled = true;
+                this.chatInput.placeholder = 'Chat ended. Click restart to continue.';
+            }
+
+            restart() {
+                this.currentState = 'start';
+                this.userData = {};
+                this.messageCount = 0;
+                this.securityFlags = 0;
+                this.rateLimitWindow = {};
+                this.chatMessages.innerHTML = '';
+                this.chatInput.disabled = false;
+                this.sendButton.disabled = false;
+                this.chatInput.placeholder = 'Type your message...';
+                this.updateMessageCount();
+                this.startConversation();
+            }
+        }
+
+        // Initialize chatbot when page loads
+        let chatbot;
+        window.addEventListener('DOMContentLoaded', () => {
+            chatbot = new SalesChatbot();
+        });
+    </script>
+</body>
+</html>

@@ -7,7 +7,7 @@ import uvicorn
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.routes.routes import router
 from app.controllers.queuecontroller import start_consumer
-MONGO_URL = "mongodb://root:example@mongo:27017/?authSource=admin"
+MONGO_URL = "mongodb://root:example@192.168.0.100:27017/?authSource=admin"
 MONGO_DB_NAME = "genet"
 
 client: AsyncIOMotorClient = None
