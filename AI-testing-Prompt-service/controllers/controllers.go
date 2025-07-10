@@ -246,7 +246,7 @@ collection := database.MongoDB.Collection("requests")
 			"error": "Failed to insert request",
 		})
 	}
-    rabbitmq.PublishRequestID(request.RequestID.Hex(),request.CompanyID)
+    rabbitmq.PublishRequestID(request.RequestID.Hex())
     fmt.Println("Request ID:", request.RequestID.Hex())
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{

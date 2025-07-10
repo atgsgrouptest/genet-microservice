@@ -43,10 +43,9 @@ func InitRabbitMQ() {
 	}
 }
 
-func PublishRequestID(requestID string , companyID string) error {
+func PublishRequestID(requestId string ) error {
 	data, _ := json.Marshal(map[string]string{
-	"requestID":  requestID,
-	"companyID":  companyID,
+	"requestId":  requestId,
 })
 
 err := channel.Publish(

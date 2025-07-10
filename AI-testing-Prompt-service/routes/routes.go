@@ -7,5 +7,5 @@ import(
 
 func UseRoutes(app *fiber.App) {
 app.Post("/makePrompt", controllers.MakePrompt)
-
+app.Get("/returnResult",controllers.ReturnResult)
 }
