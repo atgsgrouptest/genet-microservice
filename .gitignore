@@ -10,3 +10,4 @@ Adapter-service/.env
 AI-testing/app/.env
 *.env
 *.tmp
+AI-testing/venv/
