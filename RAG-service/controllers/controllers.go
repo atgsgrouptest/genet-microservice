@@ -4,6 +4,8 @@ import (
 	// "github.com/atgsgrouptest/genet-microservice/RAG-service/Error"
 	//"fmt"
 
+	"fmt"
+
 	"github.com/atgsgrouptest/genet-microservice/RAG-service/Logger"
 	"github.com/atgsgrouptest/genet-microservice/RAG-service/embedding"
 	"github.com/gofiber/fiber/v2"
@@ -28,7 +30,7 @@ func SendFiles(c *fiber.Ctx) error {
 		resp = append(resp, corpus...)
 
 		// ✅ Store in Qdrant
-		err := embedding.StoreInQdrant(corpus, "g-corpus")
+		err := embedding.StoreInQdrant(corpus, "rag_corpus")
 		if err != nil {
 			logger.Log.Error("Failed to store in Qdrant", zap.Error(err))
 		}
@@ -52,7 +54,7 @@ func GetPromptWithContext(c *fiber.Ctx) error {
 	}
 
 	// Search in Qdrant
-	chunks, err := embedding.SearchInQdrant(body.Query, "rag-corpus", 5)
+	chunks, err := embedding.SearchInQdrant(body.Query, "rag_corpus", 5)
 	if err != nil {
 		logger.Log.Error("Failed to search Qdrant", zap.Error(err))
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -68,6 +70,7 @@ func GetPromptWithContext(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+	fmt.Println("Generated answer:", answer)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"answer": answer,

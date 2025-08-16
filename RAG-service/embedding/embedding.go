@@ -1,6 +1,5 @@
 package embedding
 
-
 import (
 	"bytes"
 	"encoding/json"
@@ -8,14 +7,16 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-
+    "sync"
 	//"sort"
-	//"strings"
+	"strings"
 	//"math"
 
 	//"github.com/atgsgrouptest/genet-microservice/RAG-service/Logger"
-	 "github.com/atgsgrouptest/genet-microservice/RAG-service/Logger"
+	"github.com/atgsgrouptest/genet-microservice/RAG-service/Logger"
 	"github.com/atgsgrouptest/genet-microservice/RAG-service/models"
+	"github.com/atgsgrouptest/genet-microservice/RAG-service/utils"
+
 	//"github.com/json-iterator/go"
 	"go.uber.org/zap"
 )
@@ -67,7 +68,6 @@ func EmbedText(chunk string) ([]float64, error) {
 	fmt.Printf("Generated embedding length: %d\n", len(result.Embedding))
 	return result.Embedding, nil
 }
-
 func EmbedFileToCorpus(file *multipart.FileHeader) ([]EmbeddedDocument, error) {
 	openedFile, err := file.Open()
 	if err != nil {
@@ -75,25 +75,58 @@ func EmbedFileToCorpus(file *multipart.FileHeader) ([]EmbeddedDocument, error) {
 	}
 	defer openedFile.Close()
 
-	contentBytes, err := io.ReadAll(openedFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
+	var content string
+	if strings.HasSuffix(strings.ToLower(file.Filename), ".pdf") {
+		text, err := utils.ExtractTextFromPDF(openedFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract text from PDF: %w", err)
+		}
+		content = text
+	} else {
+		contentBytes, err := io.ReadAll(openedFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file: %w", err)
+		}
+		content = string(contentBytes)
 	}
-	content := string(contentBytes)
+
+	// Split document into chunks
 	chunks := SplitDocument(content, 250, 20)
 
-	var corpus []EmbeddedDocument
+	var wg sync.WaitGroup
+	corpusCh := make(chan EmbeddedDocument, len(chunks))
+
+	// Limit concurrency (e.g., max 5 at a time)
+	const maxConcurrent = 5
+	sem := make(chan struct{}, maxConcurrent)
+
 	for _, chunk := range chunks {
-		vec, err := EmbedText(chunk)
-		if err != nil {
-			logger.Log.Warn("Embedding failed for chunk", zap.String("chunk", chunk), zap.Error(err))
-			continue
-		}
-		corpus = append(corpus, EmbeddedDocument{
-			Content:   chunk,
-			Embedding: vec,
-		})
+		wg.Add(1)
+		sem <- struct{}{} // acquire slot
+		go func(ch string) {
+			defer wg.Done()
+			defer func() { <-sem }() // release slot
+
+			vec, err := EmbedText(ch)
+			if err != nil {
+				logger.Log.Warn("Embedding failed for chunk", zap.String("chunk", ch), zap.Error(err))
+				return
+			}
+			corpusCh <- EmbeddedDocument{
+				Content:   ch,
+				Embedding: vec,
+			}
+		}(chunk)
 	}
-	fmt.Println(corpus)
+
+	wg.Wait()
+	close(corpusCh)
+
+	var corpus []EmbeddedDocument
+	for doc := range corpusCh {
+		corpus = append(corpus, doc)
+	}
+
+	fmt.Println("Embedded corpus:", len(corpus), "chunks")
 	return corpus, nil
 }
