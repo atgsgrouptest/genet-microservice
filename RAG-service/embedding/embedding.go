@@ -91,7 +91,7 @@ func EmbedFileToCorpus(file *multipart.FileHeader) ([]EmbeddedDocument, error) {
 	}
 
 	// Split document into chunks
-	chunks := SplitDocument(content, 250, 20)
+	chunks := SplitDocument(content, 2000, 20)
 
 	var wg sync.WaitGroup
 	corpusCh := make(chan EmbeddedDocument, len(chunks))
@@ -105,7 +105,7 @@ func EmbedFileToCorpus(file *multipart.FileHeader) ([]EmbeddedDocument, error) {
 		sem <- struct{}{} // acquire slot
 		go func(ch string) {
 			defer wg.Done()
-			defer func() { <-sem }() // release slot
+			defer func() { <-sem }() 
 
 			vec, err := EmbedText(ch)
 			if err != nil {

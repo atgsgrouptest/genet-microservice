@@ -24,10 +24,10 @@ func SendFiles(c *fiber.Ctx) error {
 	}
 
 	files := form.File["files"]
-	var resp []embedding.EmbeddedDocument
+	//var resp []embedding.EmbeddedDocument
 	for _, file := range files {
 		corpus, _ := embedding.EmbedFileToCorpus(file)
-		resp = append(resp, corpus...)
+		//resp = append(resp, corpus...)
 
 		// ✅ Store in Qdrant
 		err := embedding.StoreInQdrant(corpus, "rag_corpus")
